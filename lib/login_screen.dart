@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'agent_commission_screen.dart';
 import 'manager_commission_screen.dart';
 import 'register_screen.dart'; // 🔹 Ensure correct import
+import 'reset_password_screen.dart'; // 🔹 Import Reset Password Screen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,12 +63,29 @@ class _LoginScreenState extends State<LoginScreen> {
     } on DioException catch (e) {
       setState(() {
         isLoading = false;
-        if (e.response != null && e.response!.statusCode == 401) {
+      });
+
+      if (e.response != null) {
+        if (e.response!.statusCode == 403 &&
+            e.response!.data['reset_required'] == true) {
+          // 🔹 Ensure token is stored before navigating
+          await storage.write(key: 'token', value: e.response!.data['token']);
+
+          // 🔹 Redirect user to Reset Password screen with JWT token
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    ResetPasswordScreen(token: e.response!.data['token'])),
+          );
+        } else if (e.response!.statusCode == 401) {
           errorMessage = "Invalid phone number or password.";
         } else {
           errorMessage = "Failed to connect. Please try again.";
         }
-      });
+      } else {
+        errorMessage = "Failed to connect. Please try again.";
+      }
     }
   }
 
