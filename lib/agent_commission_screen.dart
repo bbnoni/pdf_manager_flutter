@@ -67,31 +67,6 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
     }
   }
 
-  /// **Download Commission Report**
-  Future<void> downloadReport(String commissionId) async {
-    String? token = await storage.read(key: "token");
-    if (token == null) return;
-
-    try {
-      Response response = await dio.get(
-        '$baseUrl/download_commission/$commissionId',
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-          responseType: ResponseType.bytes, // Download as bytes
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        _showMessage("✅ Download started!");
-        // Implement file saving logic (Flutter file picker required)
-      } else {
-        _showMessage("❌ Download failed.");
-      }
-    } catch (e) {
-      _showMessage("❌ Error downloading report.");
-    }
-  }
-
   /// **Shows a Snackbar message**
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
@@ -137,30 +112,19 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                               ),
                           ],
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.remove_red_eye,
-                                  color: Colors.blue),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        CommissionDetailsScreen(
-                                      commission: commission,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.download, color: Colors.green),
-                              onPressed: () =>
-                                  downloadReport(commission['id'].toString()),
-                            ),
-                          ],
+                        trailing: IconButton(
+                          icon: const Icon(Icons.remove_red_eye,
+                              color: Colors.blue),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CommissionDetailsScreen(
+                                  commission: commission,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     );
@@ -178,39 +142,95 @@ class CommissionDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Commission Details")),
+      appBar: AppBar(title: const Text("Commission Details")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /// **Commission Amount**
             Text(
               "Commission Earned: GH₵${commission['amount']}",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
+
+            /// **Date**
             Text(
               "Date: ${commission['date']}",
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
-            if (commission.containsKey('commission_period'))
-              Text(
-                "Commission Period: ${commission['commission_period']}",
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue),
+            const SizedBox(height: 8),
+
+            /// **Commission Period**
+            Text(
+              "Commission Period: ${commission['commission_period']}",
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
               ),
+            ),
+            const SizedBox(height: 12),
+
+            /// **Cash-In Section**
+            const Divider(thickness: 1.5),
+            const Text(
+              "Cash-In Transactions",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            buildRow("Transactions", commission['cashin_total_transactions']),
+            buildRow("Value", "GH₵${commission['cashin_total_value']}"),
+            buildRow("Tax", "GH₵${commission['cashin_total_tax_on_valid']}"),
+            buildRow("Payout", "GH₵${commission['cashin_payout_commission']}"),
+
+            /// **Cash-Out Section**
+            const SizedBox(height: 12),
+            const Divider(thickness: 1.5),
+            const Text(
+              "Cash-Out Transactions",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            buildRow("Transactions", commission['cashout_total_transactions']),
+            buildRow("Value", "GH₵${commission['cashout_total_value']}"),
+            buildRow("Tax", "GH₵${commission['cashout_total_tax_on_valid']}"),
+            buildRow("Payout", "GH₵${commission['cashout_payout_commission']}"),
+
+            /// **Total Commissions Due**
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: Icon(Icons.download),
-              label: Text("Download Report"),
-              onPressed: () {
-                // Add logic to handle downloading
-              },
+            const Divider(thickness: 1.5),
+            Text(
+              "Total Commissions Due: GH₵${commission['total_commissions_due']}",
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// **Reusable Row for Displaying Key-Value Data**
+  Widget buildRow(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          Text(
+            value ?? "N/A",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }
