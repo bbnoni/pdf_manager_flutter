@@ -143,80 +143,95 @@ class CommissionDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Commission Details")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// **Commission Amount**
-            Text(
-              "Commission Earned: GH₵${commission['amount']}",
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-
-            /// **Date**
-            Text(
-              "Date: ${commission['date']}",
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-
-            /// **Commission Period**
-            Text(
-              "Commission Period: ${commission['commission_period']}",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
+      body: SingleChildScrollView(
+        // ✅ Prevents bottom overflow
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// **Commission Amount**
+              Text(
+                "Commission Earned: GH₵${commission['amount']}",
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
-            /// **Cash-In Section**
-            const Divider(thickness: 1.5),
-            const Text(
-              "Cash-In Transactions",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            buildRow("Transactions", commission['cashin_total_transactions']),
-            buildRow("Value", "GH₵${commission['cashin_total_value']}"),
-            buildRow("Tax", "GH₵${commission['cashin_total_tax_on_valid']}"),
-            buildRow("Payout", "GH₵${commission['cashin_payout_commission']}"),
-
-            /// **Cash-Out Section**
-            const SizedBox(height: 12),
-            const Divider(thickness: 1.5),
-            const Text(
-              "Cash-Out Transactions",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            buildRow("Transactions", commission['cashout_total_transactions']),
-            buildRow("Value", "GH₵${commission['cashout_total_value']}"),
-            buildRow("Tax", "GH₵${commission['cashout_total_tax_on_valid']}"),
-            buildRow("Payout", "GH₵${commission['cashout_payout_commission']}"),
-
-            /// **Total Commissions Due**
-            const SizedBox(height: 20),
-            const Divider(thickness: 1.5),
-            Text(
-              "Total Commissions Due: GH₵${commission['total_commissions_due']}",
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
+              /// **Date**
+              Text(
+                "Date: ${commission['date']}",
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+
+              /// **Commission Period**
+              Text(
+                "Commission Period: ${commission['commission_period']}",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              /// **Cash-In Section**
+              const Divider(thickness: 1.5),
+              const Text(
+                "Cash-In Transactions",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              buildRow("Transactions", commission['cashin_total_transactions']),
+              buildRow("Valid Transactions",
+                  commission['cashin_total_number_valid']),
+              buildRow("Value", "GH₵${commission['cashin_total_value']}"),
+              buildRow("Valid Value",
+                  "GH₵${commission['cashin_total_value_valid']}"),
+              buildRow("Tax", "GH₵${commission['cashin_total_tax_on_valid']}"),
+              buildRow(
+                  "Payout", "GH₵${commission['cashin_payout_commission']}"),
+
+              /// **Cash-Out Section**
+              const SizedBox(height: 12),
+              const Divider(thickness: 1.5),
+              const Text(
+                "Cash-Out Transactions",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              buildRow(
+                  "Transactions", commission['cashout_total_transactions']),
+              buildRow("Valid Transactions",
+                  commission['cashout_total_number_valid']),
+              buildRow("Value", "GH₵${commission['cashout_total_value']}"),
+              buildRow("Valid Value",
+                  "GH₵${commission['cashout_total_value_valid']}"),
+              buildRow("Tax", "GH₵${commission['cashout_total_tax_on_valid']}"),
+              buildRow(
+                  "Payout", "GH₵${commission['cashout_payout_commission']}"),
+
+              /// **Total Commissions Due**
+              const SizedBox(height: 20),
+              const Divider(thickness: 1.5),
+              Text(
+                "Total Commissions Due: GH₵${commission['total_commissions_due']}",
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   /// **Reusable Row for Displaying Key-Value Data**
-  Widget buildRow(String label, String? value) {
+  Widget buildRow(String label, dynamic value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -227,7 +242,7 @@ class CommissionDetailsScreen extends StatelessWidget {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           Text(
-            value ?? "N/A",
+            value != null ? value.toString() : "N/A",
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],

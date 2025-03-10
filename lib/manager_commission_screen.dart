@@ -23,9 +23,11 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
   bool _isUploading = false;
   double _uploadProgress = 0.0;
   String? _uploadedFileName;
-  PlatformFile? _selectedFile; // Store the selected file
+  int? _recordsUploaded; // 🔹 Store the number of records uploaded
+  int? _totalRecords; // 🔹 Store total records in the file
+  PlatformFile? _selectedFile;
   final TextEditingController _commissionPeriodController =
-      TextEditingController(); // 🔹 Manual Commission Period Entry
+      TextEditingController();
 
   /// **Select File (But Do Not Upload Yet)**
   Future<void> selectFile() async {
@@ -38,7 +40,7 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv', 'xlsx'],
-      withData: kIsWeb, // Needed for web (preloads bytes)
+      withData: kIsWeb,
     );
 
     if (result == null) {
@@ -52,6 +54,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
     setState(() {
       _selectedFile = selectedFile;
       _uploadedFileName = selectedFile.name;
+      _recordsUploaded = null; // Reset record count after new file selection
+      _totalRecords = null;
     });
   }
 
@@ -107,13 +111,21 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       );
 
       if (response.statusCode == 200) {
-        print("✅ Upload completed: ${_selectedFile!.name}");
-        _showMessage("✅ Upload completed: ${_selectedFile!.name}");
+        final responseData = response.data;
+        int recordsUploaded =
+            responseData['records_uploaded'] ?? 0; // 🔹 Extract uploaded count
+        int totalRecords =
+            responseData['total_records'] ?? 0; // 🔹 Extract total count
 
-        // 🔹 Clear Fields After Successful Upload
+        print("✅ Upload completed: ${_selectedFile!.name}");
+        _showMessage(
+            "✅ Upload successful! $recordsUploaded/$totalRecords records uploaded.");
+
         setState(() {
           _uploadedFileName = null;
           _selectedFile = null;
+          _recordsUploaded = recordsUploaded; // Store successful uploads
+          _totalRecords = totalRecords; // Store total records in the file
           _commissionPeriodController.clear();
         });
       } else {
@@ -216,6 +228,18 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10)),
                   ),
+                ),
+
+              const SizedBox(height: 20),
+
+              /// **Show Number of Records Uploaded**
+              if (_recordsUploaded != null && _totalRecords != null)
+                Text(
+                  "✅ $_recordsUploaded/$_totalRecords records uploaded successfully!",
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green),
                 ),
 
               const SizedBox(height: 30),
