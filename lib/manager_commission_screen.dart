@@ -23,8 +23,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
   bool _isUploading = false;
   double _uploadProgress = 0.0;
   String? _uploadedFileName;
-  int? _recordsUploaded; // 🔹 Store the number of records uploaded
-  int? _totalRecords; // 🔹 Store total records in the file
+  int? _recordsUploaded;
+  int? _totalRecords;
   PlatformFile? _selectedFile;
   final TextEditingController _commissionPeriodController =
       TextEditingController();
@@ -54,7 +54,7 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
     setState(() {
       _selectedFile = selectedFile;
       _uploadedFileName = selectedFile.name;
-      _recordsUploaded = null; // Reset record count after new file selection
+      _recordsUploaded = null;
       _totalRecords = null;
     });
   }
@@ -112,10 +112,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
 
       if (response.statusCode == 200) {
         final responseData = response.data;
-        int recordsUploaded =
-            responseData['records_uploaded'] ?? 0; // 🔹 Extract uploaded count
-        int totalRecords =
-            responseData['total_records'] ?? 0; // 🔹 Extract total count
+        int recordsUploaded = responseData['records_uploaded'] ?? 0;
+        int totalRecords = responseData['total_records'] ?? 0;
 
         print("✅ Upload completed: ${_selectedFile!.name}");
         _showMessage(
@@ -124,8 +122,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
         setState(() {
           _uploadedFileName = null;
           _selectedFile = null;
-          _recordsUploaded = recordsUploaded; // Store successful uploads
-          _totalRecords = totalRecords; // Store total records in the file
+          _recordsUploaded = recordsUploaded;
+          _totalRecords = totalRecords;
           _commissionPeriodController.clear();
         });
       } else {
@@ -153,123 +151,141 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Upload Commissions")),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              /// **Commission Period Input**
-              TextField(
-                controller: _commissionPeriodController,
-                decoration: InputDecoration(
-                  labelText: "Enter Commission Period",
-                  hintText: "e.g., January Week 3",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              /// **Select File Button**
-              ElevatedButton.icon(
-                onPressed: _isUploading ? null : selectFile,
-                icon: const Icon(Icons.upload_file),
-                label: const Text("Select CSV/XLSX File"),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  backgroundColor: Colors.blueAccent,
-                  foregroundColor: Colors.white,
-                  textStyle: const TextStyle(fontSize: 18),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              /// **Show Selected File Name**
-              if (_uploadedFileName != null)
-                Text(
-                  "📂 Selected File: $_uploadedFileName",
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-
-              const SizedBox(height: 20),
-
-              /// **Upload Progress Bar**
-              if (_isUploading)
-                Column(
-                  children: [
-                    const Text("Uploading...",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
-                    LinearProgressIndicator(value: _uploadProgress),
-                  ],
-                ),
-
-              const SizedBox(height: 20),
-
-              /// **Submit Button**
-              if (_uploadedFileName != null && !_isUploading)
-                ElevatedButton.icon(
-                  onPressed: uploadFile,
-                  icon: const Icon(Icons.cloud_upload),
-                  label: const Text("Submit"),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 16, horizontal: 24),
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    textStyle: const TextStyle(fontSize: 18),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-
-              const SizedBox(height: 20),
-
-              /// **Show Number of Records Uploaded**
-              if (_recordsUploaded != null && _totalRecords != null)
-                Text(
-                  "✅ $_recordsUploaded/$_totalRecords records uploaded successfully!",
-                  style: const TextStyle(
-                      fontSize: 16,
+      backgroundColor: Colors.grey[100],
+      body: Row(
+        children: [
+          /// **Sidebar for Navigation**
+          Container(
+            width: 250,
+            color: Colors.blueAccent,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            child: Column(
+              children: [
+                const Text(
+                  "MM Manager Portal",
+                  style: TextStyle(
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green),
+                      color: Colors.white),
                 ),
-
-              const SizedBox(height: 30),
-
-              /// **View Users & Payments Button**
-              ElevatedButton.icon(
-                onPressed: () {
+                const SizedBox(height: 30),
+                _buildSidebarItem(Icons.dashboard, "Dashboard"),
+                _buildSidebarItem(Icons.bar_chart, "Statistics"),
+                _buildSidebarItem(Icons.payment, "View Payments", onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (context) =>
-                            ViewUsersScreen()), // 🔹 Navigate to View Users Screen
+                            ViewUsersScreen()), // 🔹 Navigate to View Payments
                   );
-                },
-                icon: const Icon(Icons.people),
-                label: const Text("View Users & Payments"),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  textStyle: const TextStyle(fontSize: 18),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                }),
+                const Spacer(),
+                const Text(
+                  "© DocMgt Francis 2025",
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+
+          /// **Main Content (Centered)**
+          Expanded(
+            child: Center(
+              child: Container(
+                width: 600,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 10,
+                      spreadRadius: 3,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    /// **Title & Commission Period Input**
+                    const Text(
+                      "Upload Commissions",
+                      style:
+                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _commissionPeriodController,
+                      decoration: InputDecoration(
+                        labelText: "Enter Commission Period",
+                        hintText: "e.g., January Week 3",
+                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.calendar_today),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    /// **Select File Button**
+                    ElevatedButton.icon(
+                      onPressed: _isUploading ? null : selectFile,
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text("Select CSV/XLSX File"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    /// **Upload Progress**
+                    if (_isUploading)
+                      Column(
+                        children: [
+                          const Text("Uploading..."),
+                          const SizedBox(height: 10),
+                          LinearProgressIndicator(value: _uploadProgress),
+                        ],
+                      ),
+                    const SizedBox(height: 20),
+
+                    /// **Submit Button**
+                    if (_uploadedFileName != null && !_isUploading)
+                      ElevatedButton.icon(
+                        onPressed: uploadFile,
+                        icon: const Icon(Icons.cloud_upload),
+                        label: const Text("Submit"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+
+                    const SizedBox(height: 20),
+
+                    /// **Show Upload Status**
+                    if (_recordsUploaded != null && _totalRecords != null)
+                      Text(
+                        "✅ $_recordsUploaded/$_totalRecords records uploaded successfully!",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.green),
+                      ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildSidebarItem(IconData icon, String title, {VoidCallback? onTap}) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      onTap: onTap,
     );
   }
 }
