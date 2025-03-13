@@ -6,7 +6,8 @@ const String baseUrl = "https://pdf-manager-eygj.onrender.com";
 
 class ResetPasswordScreen extends StatefulWidget {
   final String token; // 🔹 Use token for authentication
-  const ResetPasswordScreen({super.key, required this.token});
+  const ResetPasswordScreen(
+      {super.key, required this.token, required String phoneNumber});
 
   @override
   _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
