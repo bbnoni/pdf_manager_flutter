@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -18,16 +20,21 @@ class _CreateManagerScreenState extends State<CreateManagerScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
 
   bool _isSubmitting = false;
+  String _selectedChannel = "sms"; // Default channel
+
+  /// **Generate a Random 6-Digit Password**
+  String _generateRandomPassword() {
+    Random random = Random();
+    return (100000 + random.nextInt(900000)).toString(); // 6-digit password
+  }
 
   /// **Create New Manager**
   Future<void> _createManager() async {
     if (_firstNameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty ||
-        _phoneNumberController.text.trim().isEmpty ||
-        _passwordController.text.trim().isEmpty) {
+        _phoneNumberController.text.trim().isEmpty) {
       _showMessage("⚠️ All fields are required.");
       return;
     }
@@ -37,6 +44,8 @@ class _CreateManagerScreenState extends State<CreateManagerScreen> {
       _showMessage("❌ ERROR: No JWT token found. Please log in again.");
       return;
     }
+
+    String generatedPassword = _generateRandomPassword(); // ✅ Generate password
 
     setState(() {
       _isSubmitting = true;
@@ -49,9 +58,10 @@ class _CreateManagerScreenState extends State<CreateManagerScreen> {
           "first_name": _firstNameController.text.trim(),
           "last_name": _lastNameController.text.trim(),
           "phone_number": _phoneNumberController.text.trim(),
-          "password": _passwordController.text.trim(),
-          "role": "manager", // Ensure new user is a manager
-          "first_login": true, // ✅ Force first login reset
+          "password": generatedPassword, // ✅ Auto-generated password
+          "role": "manager",
+          "first_login": true,
+          "notify_channel": _selectedChannel, // ✅ Include selected channel
         },
         options: Options(headers: {
           'Authorization': 'Bearer $token',
@@ -60,8 +70,11 @@ class _CreateManagerScreenState extends State<CreateManagerScreen> {
       );
 
       if (response.statusCode == 201) {
+        print("✅ Manager created successfully.");
+        _sendNotification(_selectedChannel, _phoneNumberController.text.trim(),
+            generatedPassword);
         _showMessage(
-            "✅ Manager created successfully! First login reset required.");
+            "✅ Manager created! Credentials sent via $_selectedChannel.");
         _clearFields();
       } else {
         _showMessage("❌ Failed to create manager.");
@@ -77,12 +90,24 @@ class _CreateManagerScreenState extends State<CreateManagerScreen> {
     }
   }
 
+  /// **Simulate Sending Notification (Print Debugging)**
+  void _sendNotification(String channel, String phoneNumber, String password) {
+    String message = "📩 Your new login password is: $password";
+
+    if (channel == "sms") {
+      print("📱 SMS sent to $phoneNumber: $message");
+    } else if (channel == "email") {
+      print("📩 Email sent to associated email for $phoneNumber: $message");
+    } else if (channel == "whatsapp") {
+      print("💬 WhatsApp message sent to $phoneNumber: $message");
+    }
+  }
+
   /// **Clear Input Fields After Submission**
   void _clearFields() {
     _firstNameController.clear();
     _lastNameController.clear();
     _phoneNumberController.clear();
-    _passwordController.clear();
   }
 
   /// **Show Message**
@@ -128,9 +153,28 @@ class _CreateManagerScreenState extends State<CreateManagerScreen> {
               _buildTextField(
                   _phoneNumberController, "Phone Number", Icons.phone,
                   isNumber: true),
+
               const SizedBox(height: 10),
-              _buildTextField(_passwordController, "Password", Icons.lock,
-                  isPassword: true),
+
+              /// **Notification Channel Dropdown**
+              DropdownButtonFormField<String>(
+                value: _selectedChannel,
+                items: const [
+                  DropdownMenuItem(value: "sms", child: Text("📱 SMS")),
+                  DropdownMenuItem(value: "email", child: Text("📩 Email")),
+                  DropdownMenuItem(
+                      value: "whatsapp", child: Text("💬 WhatsApp")),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedChannel = value!;
+                  });
+                },
+                decoration: const InputDecoration(
+                  labelText: "Notification Channel",
+                  border: OutlineInputBorder(),
+                ),
+              ),
 
               const SizedBox(height: 20),
 

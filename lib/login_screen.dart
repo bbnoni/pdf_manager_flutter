@@ -260,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
                 child: const Text(
                   "Not yet registered? Sign up",
-                  style: TextStyle(color: Colors.blue),
+                  //style: TextStyle(color: Colors.blue),
                 ),
               ),
             ],
