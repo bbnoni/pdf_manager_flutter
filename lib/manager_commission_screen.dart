@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart'; // For kIsWeb
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'create_manager_screen.dart'; // Import Create Manager Screen
-import 'login_screen.dart'; // Import the login screen for logout functionality
+import 'create_manager_screen.dart'; // Import the CreateManagerScreen class
+import 'login_screen.dart';
 import 'view_users_screen.dart';
 
 const String baseUrl = "https://pdf-manager-eygj.onrender.com";
@@ -31,17 +31,18 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
   final TextEditingController _commissionPeriodController =
       TextEditingController();
 
-  bool _isSidebarOpen = true; // Controls sidebar visibility on mobile
+  bool _isSidebarOpen = false;
 
   Future<void> _logout() async {
     await storage.deleteAll();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 
-  /// **Select File**
   Future<void> selectFile() async {
     if (_commissionPeriodController.text.trim().isEmpty) {
       _showMessage(
@@ -69,7 +70,6 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
     });
   }
 
-  /// **Upload File**
   Future<void> uploadFile() async {
     if (_selectedFile == null) {
       _showMessage("⚠️ Please select a file before submitting.");
@@ -147,7 +147,6 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
     }
   }
 
-  /// **Shows a Snackbar message**
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
@@ -155,153 +154,161 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isMobile = constraints.maxWidth < 700;
 
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: Row(
-        children: [
-          /// **Sidebar Navigation (Collapses on Small Screens)**
-          if (screenWidth > 600 || _isSidebarOpen) ...[
-            Container(
-              width: 250,
-              color: Colors.blueAccent,
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "MM Manager Portal",
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                  const SizedBox(height: 30),
-                  _buildSidebarItem(Icons.dashboard, "Dashboard"),
-                  _buildSidebarItem(Icons.bar_chart, "Statistics"),
-                  _buildSidebarItem(Icons.payment, "View Payments", onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ViewUsersScreen()),
-                    );
-                  }),
-                  _buildSidebarItem(Icons.person_add, "Create New Manager",
-                      onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const CreateManagerScreen()),
-                    );
-                  }),
-                  _buildAccountSection(),
-                  const Spacer(),
-                  const Text(
-                    "© DocMgt Francis 2025",
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          /// **Main Content**
-          Expanded(
-            child: Center(
-              child: Container(
-                width: screenWidth > 600 ? 600 : screenWidth * 0.9,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      blurRadius: 10,
-                      spreadRadius: 3,
-                      offset: const Offset(0, 5),
+        return Scaffold(
+          backgroundColor: Colors.grey[100],
+          appBar: isMobile
+              ? AppBar(
+                  title: const Text("MM Manager Portal"),
+                  backgroundColor: Colors.blueAccent,
+                  leading: Builder(
+                    builder: (context) => IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (screenWidth < 600)
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: IconButton(
-                          icon: const Icon(Icons.menu, size: 30),
-                          onPressed: () {
-                            setState(() {
-                              _isSidebarOpen = !_isSidebarOpen;
-                            });
-                          },
+                  ),
+                )
+              : null,
+          drawer: isMobile ? _buildDrawer() : null,
+          body: Row(
+            children: [
+              if (!isMobile) _buildSidebar(),
+              Expanded(
+                child: Center(
+                  child: Container(
+                    width: constraints.maxWidth > 1000
+                        ? 800
+                        : constraints.maxWidth * 0.9,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          blurRadius: 10,
+                          spreadRadius: 3,
+                          offset: const Offset(0, 5),
                         ),
-                      ),
-                    const Text(
-                      "Upload Commissions",
-                      style:
-                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ],
                     ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _commissionPeriodController,
-                      decoration: InputDecoration(
-                        labelText: "Enter Commission Period",
-                        hintText: "e.g., January Week 3",
-                        border: OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.calendar_today),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    /// **Select File Button**
-                    ElevatedButton.icon(
-                      onPressed: _isUploading ? null : selectFile,
-                      icon: const Icon(Icons.upload_file),
-                      label: const Text("Select CSV/XLSX File"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-
-                    if (_isUploading)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: LinearProgressIndicator(value: _uploadProgress),
-                      ),
-
-                    if (_selectedFile != null)
-                      Column(
-                        children: [
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Upload Commissions",
+                          style: TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _commissionPeriodController,
+                          decoration: InputDecoration(
+                            labelText: "Enter Commission Period",
+                            hintText: "e.g., January Week 3",
+                            border: OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.calendar_today),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: _isUploading ? null : selectFile,
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text("Select CSV/XLSX File"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        if (_isUploading)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Text("📂 Selected File: $_uploadedFileName"),
+                            child:
+                                LinearProgressIndicator(value: _uploadProgress),
                           ),
-                          ElevatedButton.icon(
-                            onPressed: _isUploading ? null : uploadFile,
-                            icon: _isUploading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white)
-                                : const Icon(Icons.cloud_upload),
-                            label:
-                                Text(_isUploading ? "Uploading..." : "Submit"),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                            ),
+                        if (_selectedFile != null)
+                          Column(
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                child: Text(
+                                    "📂 Selected File: $_uploadedFileName"),
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: _isUploading ? null : uploadFile,
+                                icon: _isUploading
+                                    ? const CircularProgressIndicator(
+                                        color: Colors.white)
+                                    : const Icon(Icons.cloud_upload),
+                                label: Text(
+                                    _isUploading ? "Uploading..." : "Submit"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      width: 250,
+      color: Colors.blueAccent,
+      child: _buildDrawerContent(),
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Container(
+        color: Colors.blueAccent,
+        child: _buildDrawerContent(),
       ),
+    );
+  }
+
+  Widget _buildDrawerContent() {
+    return Column(
+      children: [
+        const DrawerHeader(
+          child: Text("MM Manager Portal",
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
+        ),
+        _buildSidebarItem(Icons.dashboard, "Dashboard"),
+        _buildSidebarItem(Icons.payment, "View Payments", onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ViewUsersScreen()),
+          );
+        }),
+        _buildSidebarItem(Icons.person_add, "Create New Manager", onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    const CreateManagerScreen()), // ✅ FIXED: Added correct navigation
+          );
+        }),
+        _buildSidebarItem(Icons.logout, "Logout", onTap: _logout),
+      ],
     );
   }
 
@@ -312,44 +319,4 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       onTap: onTap,
     );
   }
-
-  /// **⬇️ Account Section Function ⬇️**
-  Widget _buildAccountSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Divider(color: Colors.white70),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            "ACCOUNT",
-            style:
-                TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
-          ),
-        ),
-        _buildSidebarItem(Icons.settings, "Settings"),
-        _buildSidebarItem(Icons.logout, "Logout", onTap: _logout),
-      ],
-    );
-  }
 }
-
-
-
-  //  if (_uploadedFileName != null)
-  //                     Padding(
-  //                       padding: const EdgeInsets.symmetric(vertical: 10),
-  //                       child: Text("📂 Selected File: $_uploadedFileName",
-  //                           style: const TextStyle(fontSize: 16)),
-  //                     ),
-
-  //                   if (_selectedFile != null && !_isUploading)
-  //                     ElevatedButton.icon(
-  //                       onPressed: uploadFile,
-  //                       icon: const Icon(Icons.cloud_upload),
-  //                       label: const Text("Submit"),
-  //                       style: ElevatedButton.styleFrom(
-  //                         backgroundColor: Colors.green,
-  //                         foregroundColor: Colors.white,
-  //                       ),
-  //                     ),
