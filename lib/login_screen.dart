@@ -25,17 +25,59 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final String baseUrl = "https://pdf-manager-eygj.onrender.com";
 
-  void login() async {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus(); // 🔹 Check if user is already logged in
+  }
+
+  /// **🔹 Check if user is already logged in**
+  Future<void> _checkLoginStatus() async {
+    String? token = await storage.read(key: 'token');
+    String? role = await storage.read(key: 'role');
+
+    if (token != null && role != null) {
+      Future.delayed(Duration.zero, () {
+        if (role == 'manager') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const ManagerCommissionScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const AgentCommissionScreen()),
+          );
+        }
+      });
+    }
+  }
+
+  /// **🔹 Normalize Phone Number (Handles `024xxxxxxx` and `23324xxxxxxx`)**
+  String _normalizePhoneNumber(String phoneNumber) {
+    phoneNumber = phoneNumber.trim();
+    if (phoneNumber.startsWith("0")) {
+      return "233${phoneNumber.substring(1)}"; // Remove `0` and add `233`
+    }
+    return phoneNumber;
+  }
+
+  /// **🔹 Handle User Login**
+  Future<void> login() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
 
+    String phoneNumber = _normalizePhoneNumber(phoneController.text);
+
     try {
       final response = await dio.post(
         '$baseUrl/login',
         data: {
-          'phone_number': phoneController.text.trim(),
+          'phone_number': phoneNumber, // ✅ Send normalized phone number
           'password': passwordController.text.trim(),
         },
         options: Options(headers: {
@@ -51,12 +93,14 @@ class _LoginScreenState extends State<LoginScreen> {
         if (response.data['role'] == 'manager') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ManagerCommissionScreen()),
+            MaterialPageRoute(
+                builder: (context) => const ManagerCommissionScreen()),
           );
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => AgentCommissionScreen()),
+            MaterialPageRoute(
+                builder: (context) => const AgentCommissionScreen()),
           );
         }
       }
@@ -68,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (e.response != null) {
         if (e.response!.statusCode == 403 &&
             e.response!.data['reset_required'] == true) {
-          // 🔹 Ensure token is stored before navigating
+          // 🔹 Store token before navigating
           await storage.write(key: 'token', value: e.response!.data['token']);
 
           // 🔹 Redirect user to Reset Password screen with JWT token
@@ -79,12 +123,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ResetPasswordScreen(token: e.response!.data['token'])),
           );
         } else if (e.response!.statusCode == 401) {
-          errorMessage = "Invalid phone number or password.";
+          errorMessage = "❌ Invalid phone number or password.";
         } else {
-          errorMessage = "Failed to connect. Please try again.";
+          errorMessage = "❌ Failed to connect. Please try again.";
         }
       } else {
-        errorMessage = "Failed to connect. Please try again.";
+        errorMessage = "❌ Server unreachable. Check your internet connection.";
       }
     }
   }
@@ -101,25 +145,25 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: InputDecoration(labelText: 'Phone Number'),
+                decoration: const InputDecoration(labelText: 'Phone Number'),
               ),
               TextField(
                 controller: passwordController,
-                decoration: InputDecoration(labelText: 'Password'),
+                decoration: const InputDecoration(labelText: 'Password'),
                 obscureText: true,
               ),
               const SizedBox(height: 20),
               if (errorMessage != null)
                 Text(
                   errorMessage!,
-                  style: TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red),
                 ),
               const SizedBox(height: 10),
               isLoading
-                  ? CircularProgressIndicator()
+                  ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: login,
-                      child: Text('Login'),
+                      child: const Text('Login'),
                     ),
               const SizedBox(height: 20),
               TextButton(
