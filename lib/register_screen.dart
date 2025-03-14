@@ -19,8 +19,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
+  bool isLoading = false; // ✅ Track loading state
+
   Future<void> registerAgent() async {
     if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      isLoading = true; // ✅ Show loading indicator
+    });
 
     String firstName = firstNameController.text.trim();
     String lastName = lastNameController.text.trim();
@@ -35,6 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           "last_name": lastName,
           "phone_number": phoneNumber,
           "password": password,
+          "role": "agent", // ✅ Added role (important for backend)
         },
       );
 
@@ -46,15 +53,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.pop(context); // Go back to login
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("❌ ${response.data['error']}"),
+          content:
+              Text("❌ ${response.data['error'] ?? 'Registration failed.'}"),
           backgroundColor: Colors.red,
         ));
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("❌ Registration failed."),
+    } on DioException catch (e) {
+      print("❌ Registration Error: ${e.response?.data}");
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content:
+            Text("❌ ${e.response?.data?['error'] ?? 'Registration failed.'}"),
         backgroundColor: Colors.red,
       ));
+    } finally {
+      setState(() {
+        isLoading = false; // ✅ Hide loading indicator after request
+      });
     }
   }
 
@@ -114,10 +129,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: registerAgent,
-                child: const Text("Register"),
-              ),
+              isLoading
+                  ? const CircularProgressIndicator() // ✅ Show loader while registering
+                  : ElevatedButton(
+                      onPressed: registerAgent,
+                      child: const Text("Register"),
+                    ),
             ],
           ),
         ),
