@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'agent_commission_screen.dart';
-import 'forgot_password_reset_screen.dart'; // ✅ New import
+import 'forgot_password_reset_screen.dart';
 import 'manager_commission_screen.dart';
-import 'register_screen.dart';
+import 'register_screen.dart'; // ✅ Import Register Screen
+import 'reset_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -87,6 +88,10 @@ class _LoginScreenState extends State<LoginScreen> {
         await storage.write(key: 'token', value: response.data['token'] ?? '');
         await storage.write(key: 'role', value: response.data['role'] ?? '');
 
+        setState(() {
+          isLoading = false;
+        });
+
         if (response.data['role'] == 'manager') {
           Navigator.pushReplacement(
             context,
@@ -101,28 +106,54 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } else {
-        _handleInvalidLogin();
+        _handleInvalidLogin(null);
       }
     } on DioException catch (e) {
-      setState(() => isLoading = false);
+      print("❌ API Error: ${e.response?.data}");
 
-      if (e.response?.statusCode == 401) {
-        _handleInvalidLogin();
-      } else {
+      if (e.response?.statusCode == 403 &&
+          e.response?.data['reset_required'] == true) {
+        String token = e.response?.data['token'] ?? ''; // Get JWT token
+        String phoneNumber = phoneController.text.trim();
+
+        print("🔹 Navigating to Reset Password Screen...");
+
         setState(() {
-          errorMessage = "❌ Something went wrong.";
+          isLoading = false; // ✅ Ensure loading state resets before navigating
         });
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResetPasswordScreen(
+              token: token, // ✅ JWT token to authenticate reset
+              phoneNumber: phoneNumber, // ✅ Pass phone number
+              isFirstTimeLogin: true, // ✅ Ensure flag is set
+            ),
+          ),
+        );
+        return;
       }
+
+      _handleInvalidLogin(e);
     }
   }
 
-  /// **🔹 Handle Invalid Login (Clear Password & Show Message)**
-  void _handleInvalidLogin() {
+  /// **🔹 Handle Invalid Login (Show Error & Reset Password Field)**
+  void _handleInvalidLogin(DioException? e) {
+    String errorMsg = "❌ Invalid phone number or password.";
+
+    if (e != null && e.response?.data is Map<String, dynamic>) {
+      errorMsg = e.response?.data['error'] ?? errorMsg;
+    }
+
     setState(() {
       isLoading = false;
-      errorMessage = "❌ Invalid phone number or password.";
-      passwordController.clear(); // ✅ Clear the password field for re-entry
+      errorMessage = errorMsg;
+      passwordController.clear(); // ✅ Clear password field for re-entry
     });
+
+    _showMessage(errorMsg); // ✅ Show Snackbar Message
   }
 
   /// **🔹 Forgot Password: Open Channel Selection Dialog**
@@ -183,7 +214,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         _showMessage("✅ Reset code sent via $channel!");
 
-        // 🚀 Navigate to ForgotPasswordResetScreen where the user will enter the token
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -258,10 +288,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     MaterialPageRoute(builder: (context) => RegisterScreen()),
                   );
                 },
-                child: const Text(
-                  "Not yet registered? Sign up",
-                  //style: TextStyle(color: Colors.blue),
-                ),
+                child: const Text("Not yet registered? Sign up"),
               ),
             ],
           ),

@@ -2,12 +2,21 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'login_screen.dart';
+
 const String baseUrl = "https://pdf-manager-eygj.onrender.com";
 
 class ResetPasswordScreen extends StatefulWidget {
-  final String token; // 🔹 Use token for authentication
-  const ResetPasswordScreen(
-      {super.key, required this.token, required String phoneNumber});
+  final String token;
+  final String phoneNumber;
+  final bool isFirstTimeLogin; // ✅ Track if it's a first-time login reset
+
+  const ResetPasswordScreen({
+    super.key,
+    required this.token,
+    required this.phoneNumber,
+    required this.isFirstTimeLogin, // ✅ Add isFirstTimeLogin flag
+  });
 
   @override
   _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
@@ -21,6 +30,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _tokenController =
+      TextEditingController(); // ✅ Only needed for forgot password
 
   bool isLoading = false;
   String? errorMessage;
@@ -37,11 +48,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       Response response = await dio.post(
         '$baseUrl/reset_password',
         data: {
+          "phone_number": widget.phoneNumber,
           "new_password": _newPasswordController.text.trim(),
+          if (!widget.isFirstTimeLogin)
+            "token": _tokenController.text
+                .trim(), // ✅ Include token only if not first-time login
         },
         options: Options(
           headers: {
-            "Authorization": "Bearer ${widget.token}", // 🔹 Use token for auth
+            if (widget.isFirstTimeLogin)
+              "Authorization":
+                  "Bearer ${widget.token}", // ✅ Use JWT for first-time login reset
             "Content-Type": "application/json",
           },
         ),
@@ -55,7 +72,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           content: Text("✅ Password reset successful! Please log in."),
           backgroundColor: Colors.green,
         ));
-        Navigator.pop(context); // Go back to login
+
+        // ✅ Navigate back to login screen after success
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
       } else {
         setState(() {
           errorMessage = response.data['error'] ?? "❌ Password reset failed.";
@@ -88,6 +110,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 style: TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 20),
+
+              // ✅ Show token field only if not first-time login
+              if (!widget.isFirstTimeLogin)
+                TextFormField(
+                  controller: _tokenController,
+                  decoration: const InputDecoration(labelText: "Reset Token"),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value!.trim().isEmpty) return "Enter reset token";
+                    return null;
+                  },
+                ),
+
               TextFormField(
                 controller: _newPasswordController,
                 decoration: const InputDecoration(labelText: "New Password"),
@@ -113,10 +148,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
               const SizedBox(height: 20),
               if (errorMessage != null)
-                Text(
-                  errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                ),
+                Text(errorMessage!, style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 10),
               isLoading
                   ? const Center(child: CircularProgressIndicator())
