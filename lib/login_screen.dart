@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final Dio dio = Dio();
 
   bool isLoading = false;
+  bool obscurePassword = true; // 👁 Toggle flag
   String? errorMessage;
 
   final String baseUrl = "https://pdf-manager-eygj.onrender.com";
@@ -32,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _checkLoginStatus();
   }
 
-  /// **🔹 Check if user is already logged in**
   Future<void> _checkLoginStatus() async {
     String? token = await storage.read(key: 'token');
     String? role = await storage.read(key: 'role');
@@ -56,16 +56,14 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// **🔹 Normalize Phone Number**
   String _normalizePhoneNumber(String phoneNumber) {
     phoneNumber = phoneNumber.trim();
     if (phoneNumber.startsWith("0")) {
-      return "233${phoneNumber.substring(1)}"; // Convert `024xxxxxxx` → `23324xxxxxxx`
+      return "233${phoneNumber.substring(1)}";
     }
     return phoneNumber;
   }
 
-  /// **🔹 Handle User Login**
   Future<void> login() async {
     setState(() {
       isLoading = true;
@@ -113,22 +111,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (e.response?.statusCode == 403 &&
           e.response?.data['reset_required'] == true) {
-        String token = e.response?.data['token'] ?? ''; // Get JWT token
+        String token = e.response?.data['token'] ?? '';
         String phoneNumber = phoneController.text.trim();
 
-        print("🔹 Navigating to Reset Password Screen...");
-
         setState(() {
-          isLoading = false; // ✅ Ensure loading state resets before navigating
+          isLoading = false;
         });
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => ResetPasswordScreen(
-              token: token, // ✅ JWT token to authenticate reset
-              phoneNumber: phoneNumber, // ✅ Pass phone number
-              isFirstTimeLogin: true, // ✅ Ensure flag is set
+              token: token,
+              phoneNumber: phoneNumber,
+              isFirstTimeLogin: true,
             ),
           ),
         );
@@ -139,7 +135,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// **🔹 Handle Invalid Login (Show Error & Reset Password Field)**
   void _handleInvalidLogin(DioException? e) {
     String errorMsg = "❌ Invalid phone number or password.";
 
@@ -150,13 +145,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       isLoading = false;
       errorMessage = errorMsg;
-      passwordController.clear(); // ✅ Clear password field for re-entry
+      passwordController.clear();
     });
 
-    _showMessage(errorMsg); // ✅ Show Snackbar Message
+    _showMessage(errorMsg);
   }
 
-  /// **🔹 Forgot Password: Open Channel Selection Dialog**
   void _showForgotPasswordDialog() {
     showDialog(
       context: context,
@@ -190,7 +184,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// **🔹 Send Forgot Password Request & Redirect to Reset Token Entry Screen**
   Future<void> _sendForgotPasswordRequest(String channel) async {
     String phoneNumber = _normalizePhoneNumber(phoneController.text);
 
@@ -209,8 +202,6 @@ class _LoginScreenState extends State<LoginScreen> {
         options: Options(headers: {"Content-Type": "application/json"}),
       );
 
-      print("API Response: ${response.data}");
-
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         _showMessage("✅ Reset code sent via $channel!");
 
@@ -218,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => ForgotPasswordResetScreen(
-              phoneNumber: phoneNumber, // ✅ Pass the phone number
+              phoneNumber: phoneNumber,
             ),
           ),
         );
@@ -226,8 +217,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _showMessage("❌ Unexpected response format.");
       }
     } on DioException catch (e) {
-      print("Error: ${e.response?.data}");
-
       if (e.response?.data is Map<String, dynamic>) {
         _showMessage(
             "❌ ${e.response?.data['error'] ?? 'Something went wrong'}");
@@ -237,7 +226,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// **🔹 Show Snackbar Message**
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
@@ -259,8 +247,20 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               TextField(
                 controller: passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 10),
               Align(
