@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final Dio dio = Dio();
 
   bool isLoading = false;
-  bool obscurePassword = true; // 👁 Toggle flag
+  bool obscurePassword = true;
   String? errorMessage;
 
   final String baseUrl = "https://pdf-manager-eygj.onrender.com";
@@ -107,8 +107,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _handleInvalidLogin(null);
       }
     } on DioException catch (e) {
-      print("❌ API Error: ${e.response?.data}");
-
       if (e.response?.statusCode == 403 &&
           e.response?.data['reset_required'] == true) {
         String token = e.response?.data['token'] ?? '';
@@ -130,14 +128,12 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
-
       _handleInvalidLogin(e);
     }
   }
 
   void _handleInvalidLogin(DioException? e) {
     String errorMsg = "❌ Invalid phone number or password.";
-
     if (e != null && e.response?.data is Map<String, dynamic>) {
       errorMsg = e.response?.data['error'] ?? errorMsg;
     }
@@ -204,7 +200,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         _showMessage("✅ Reset code sent via $channel!");
-
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -235,62 +230,72 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-              ),
-              TextField(
-                controller: passwordController,
-                obscureText: obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        obscurePassword = !obscurePassword;
-                      });
-                    },
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration:
+                        const InputDecoration(labelText: 'Phone Number'),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _showForgotPasswordDialog,
-                  child: const Text("Forgot Password?"),
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (errorMessage != null)
-                Text(errorMessage!, style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 10),
-              isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: login,
-                      child: const Text('Login'),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            obscurePassword = !obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => RegisterScreen()),
-                  );
-                },
-                child: const Text("Not yet registered? Sign up"),
+                  ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _showForgotPasswordDialog,
+                      child: const Text("Forgot Password?"),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (errorMessage != null)
+                    Text(errorMessage!,
+                        style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 10),
+                  isLoading
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                          onPressed: login,
+                          child: const Text('Login'),
+                        ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => RegisterScreen()),
+                      );
+                    },
+                    child: const Text("Not yet registered? Sign up"),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

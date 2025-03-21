@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'commission_details_screen.dart';
-import 'login_screen.dart'; // Ensure LoginScreen is properly imported
+import 'login_screen.dart';
 
 const String baseUrl = "https://pdf-manager-eygj.onrender.com";
 
@@ -18,7 +18,9 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
   final Dio dio = Dio();
   final storage = FlutterSecureStorage();
   List<Map<String, dynamic>> commissions = [];
+  List<Map<String, dynamic>> filteredCommissions = [];
   bool _isLoading = true;
+  String searchQuery = "";
 
   @override
   void initState() {
@@ -42,7 +44,9 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
 
       if (response.statusCode == 200 && response.data is List) {
         setState(() {
-          commissions = response.data.cast<Map<String, dynamic>>();
+          commissions =
+              response.data.cast<Map<String, dynamic>>().reversed.toList();
+          filteredCommissions = commissions;
           _isLoading = false;
         });
 
@@ -58,6 +62,22 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
       _showMessage(
           "❌ ERROR: ${e.response?.data?['error'] ?? 'Something went wrong'}");
     }
+  }
+
+  void _filterCommissions(String query) {
+    setState(() {
+      searchQuery = query;
+      filteredCommissions = commissions.where((commission) {
+        return commission['commission_period']
+                .toString()
+                .toLowerCase()
+                .contains(query.toLowerCase()) ||
+            commission['date']
+                .toString()
+                .toLowerCase()
+                .contains(query.toLowerCase());
+      }).toList();
+    });
   }
 
   Future<void> _logout() async {
@@ -118,52 +138,70 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                     ),
                     child: _isLoading
                         ? const Center(child: CircularProgressIndicator())
-                        : commissions.isEmpty
-                            ? const Center(
-                                child: Text("No commissions assigned yet."))
-                            : ListView.builder(
-                                itemCount: commissions.length,
-                                itemBuilder: (context, index) {
-                                  final commission = commissions[index];
-                                  return Card(
-                                    elevation: 4,
-                                    margin:
-                                        const EdgeInsets.symmetric(vertical: 8),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.all(10),
-                                      title: Text(
-                                        "GH₵${commission['amount']}",
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18),
-                                      ),
-                                      subtitle: Text(
-                                        "Date: ${commission['date']}  •  Period: ${commission['commission_period']}",
-                                        style:
-                                            const TextStyle(color: Colors.grey),
-                                      ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.remove_red_eye,
-                                            color: Colors.blue),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  CommissionDetailsScreen(
-                                                commission: commission,
+                        : Column(
+                            children: [
+                              TextField(
+                                decoration: const InputDecoration(
+                                  hintText: 'Search by week or date',
+                                  prefixIcon: Icon(Icons.search),
+                                ),
+                                onChanged: _filterCommissions,
+                              ),
+                              const SizedBox(height: 15),
+                              Expanded(
+                                child: filteredCommissions.isEmpty
+                                    ? const Center(
+                                        child: Text("No commissions found."))
+                                    : ListView.builder(
+                                        itemCount: filteredCommissions.length,
+                                        itemBuilder: (context, index) {
+                                          final commission =
+                                              filteredCommissions[index];
+                                          return Card(
+                                            elevation: 4,
+                                            margin: const EdgeInsets.symmetric(
+                                                vertical: 8),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: ListTile(
+                                              contentPadding:
+                                                  const EdgeInsets.all(10),
+                                              title: Text(
+                                                "GH₵${commission['amount']}",
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18),
+                                              ),
+                                              subtitle: Text(
+                                                "Date: ${commission['date']}  •  Period: ${commission['commission_period']}",
+                                                style: const TextStyle(
+                                                    color: Colors.grey),
+                                              ),
+                                              trailing: IconButton(
+                                                icon: const Icon(
+                                                    Icons.remove_red_eye,
+                                                    color: Colors.blue),
+                                                onPressed: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          CommissionDetailsScreen(
+                                                        commission: commission,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ),
                                           );
                                         },
                                       ),
-                                    ),
-                                  );
-                                },
                               ),
+                            ],
+                          ),
                   ),
                 ),
               ),
@@ -199,9 +237,8 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                     _buildSidebarItem(Icons.dashboard, "Dashboard"),
                     _buildSidebarItem(Icons.money, "My Commissions",
                         isActive: true),
-                    //_buildSidebarItem(Icons.person_add, "Create New Manager"),
                     const SizedBox(height: 20),
-                    _buildAccountSection(), // ✅ Ensures visibility
+                    _buildAccountSection(),
                   ],
                 ),
               ),
@@ -241,9 +278,8 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                     _buildSidebarItem(Icons.dashboard, "Dashboard"),
                     _buildSidebarItem(Icons.money, "My Commissions",
                         isActive: true),
-                    // _buildSidebarItem(Icons.person_add, "Create New Manager"),
                     const SizedBox(height: 20),
-                    _buildAccountSection(), // ✅ Ensures visibility
+                    _buildAccountSection(),
                   ],
                 ),
               ),
@@ -283,8 +319,7 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                   color: Colors.white70, fontWeight: FontWeight.bold)),
         ),
         _buildSidebarItem(Icons.settings, "Settings"),
-        _buildSidebarItem(Icons.logout, "Logout",
-            onTap: _logout), // ✅ Fully visible now!
+        _buildSidebarItem(Icons.logout, "Logout", onTap: _logout),
       ],
     );
   }
