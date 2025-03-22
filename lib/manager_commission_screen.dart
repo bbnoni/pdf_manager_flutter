@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pdf_manager/delete_commission_screen.dart';
 
 import 'create_manager_screen.dart'; // Import the CreateManagerScreen class
 import 'login_screen.dart';
@@ -32,6 +33,24 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       TextEditingController();
 
   bool _isSidebarOpen = false;
+
+  final List<String> commissionPeriods = [
+    for (var month in [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ])
+      for (var week = 1; week <= 5; week++) "$month Week $week"
+  ];
 
   Future<void> _logout() async {
     await storage.deleteAll();
@@ -305,6 +324,14 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
             MaterialPageRoute(
                 builder: (context) =>
                     const CreateManagerScreen()), // ✅ FIXED: Added correct navigation
+          );
+        }),
+        _buildSidebarItem(Icons.delete, "Delete Commissions", onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const DeleteCommissionScreen(),
+            ),
           );
         }),
         _buildSidebarItem(Icons.logout, "Logout", onTap: _logout),

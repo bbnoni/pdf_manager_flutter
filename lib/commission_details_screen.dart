@@ -17,9 +17,6 @@ class CommissionDetailsScreen extends StatelessWidget {
                 style:
                     const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text("Date: ${commission['date']}",
-                style: const TextStyle(fontSize: 16, color: Colors.grey)),
-            const SizedBox(height: 8),
             Text("Commission Period: ${commission['commission_period']}",
                 style: const TextStyle(
                     fontSize: 16,

@@ -65,11 +65,11 @@ class _UserPaymentsScreenState extends State<UserPaymentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("User Payments")),
+      appBar: AppBar(title: const Text("User Commissions")),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : payments.isEmpty
-              ? const Center(child: Text("No payments found for this user."))
+              ? const Center(child: Text("No commissions found for this user."))
               : ListView.builder(
                   itemCount: payments.length,
                   itemBuilder: (context, index) {
