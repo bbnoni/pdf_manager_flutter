@@ -1,9 +1,14 @@
+import 'dart:io' show File;
+
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import 'package:pdf_manager/delete_commission_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'create_manager_screen.dart'; // Import the CreateManagerScreen class
 import 'login_screen.dart';
@@ -203,9 +208,73 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
         final responseData = response.data;
         int recordsUploaded = responseData['records_uploaded'] ?? 0;
         int totalRecords = responseData['total_records'] ?? 0;
+        String? failedUrl = responseData['failed_download_url'];
 
         _showMessage(
             "✅ Upload successful! $recordsUploaded/$totalRecords records uploaded.");
+
+        if (failedUrl != null) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("⚠️ Some Records Failed"),
+                content: const Text(
+                    "Some records were not successfully processed. Would you like to download the failed records for review?"),
+                actions: [
+                  TextButton(
+                    child: const Text("Cancel"),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.download),
+                    label: const Text("Download"),
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+
+                      if (kIsWeb) {
+                        // Web: Open URL directly
+                        await launchUrl(Uri.parse(baseUrl + failedUrl),
+                            mode: LaunchMode.externalApplication);
+                        return;
+                      }
+
+                      String? token = await storage.read(key: "token");
+                      if (token == null) {
+                        _showMessage("❌ No token found.");
+                        return;
+                      }
+
+                      try {
+                        final response = await dio.get(
+                          baseUrl + failedUrl,
+                          options: Options(
+                            headers: {'Authorization': 'Bearer $token'},
+                            responseType: ResponseType.bytes,
+                          ),
+                        );
+
+                        final bytes = response.data;
+                        final directory = await getTemporaryDirectory();
+                        final filePath =
+                            "${directory.path}/failed_commissions_${DateTime.now().millisecondsSinceEpoch}.xlsx";
+                        final file = File(filePath);
+                        await file.writeAsBytes(bytes);
+
+                        await OpenFile.open(
+                            filePath); // Automatically open Excel file
+
+                        _showMessage("✅ File saved and opened.");
+                      } catch (e) {
+                        _showMessage("❌ Failed to download file.");
+                      }
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        }
 
         setState(() {
           _uploadedFileName = null;

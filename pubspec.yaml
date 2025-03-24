@@ -35,6 +35,10 @@ dependencies:
   jwt_decoder: ^2.0.1
   file_picker: ^6.1.1
   syncfusion_flutter_pdfviewer: ^28.2.9
+  url_launcher: ^6.2.4
+  open_file: ^3.3.2
+  
+
 
 
   # The following adds the Cupertino Icons font to your application.
