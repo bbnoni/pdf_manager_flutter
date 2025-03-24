@@ -34,6 +34,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
 
   bool _isSidebarOpen = false;
 
+  String _uploadMode = 'append'; // default
+
   final List<String> commissionPeriods = [
     for (var month in [
       'January',
@@ -89,6 +91,9 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
     });
   }
 
+// =====================
+// ⬇️ REPLACE THIS BLOCK ⬇️
+// =====================
   Future<void> uploadFile() async {
     if (_selectedFile == null) {
       _showMessage("⚠️ Please select a file before submitting.");
@@ -101,7 +106,64 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       return;
     }
 
+    final commissionPeriod = _commissionPeriodController.text.trim();
+    if (commissionPeriod.isEmpty) {
+      _showMessage("⚠️ Commission period cannot be empty.");
+      return;
+    }
+
     try {
+      // Show spinner before API call
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Check if commission period exists
+      final checkResponse = await dio.get(
+        '$baseUrl/check_commission_period',
+        queryParameters: {'commission_period': commissionPeriod},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      Navigator.pop(context); // Always close spinner after request finishes
+
+      bool periodExists = checkResponse.data['exists'] == true;
+
+      String action = "append"; // default action
+      if (periodExists) {
+        final decision = await showDialog<String>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Commission Period Exists"),
+            content: const Text(
+                "A commission with this period already exists. What would you like to do?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'cancel'),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'append'),
+                child: const Text("Append"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'replace'),
+                child: const Text("Replace"),
+              ),
+            ],
+          ),
+        );
+
+        if (decision == null || decision == 'cancel') {
+          _showMessage("⚠️ Upload cancelled.");
+          return;
+        }
+        action = decision;
+      }
+
+      // Prepare file
       MultipartFile multipartFile;
       if (kIsWeb) {
         multipartFile = MultipartFile.fromBytes(_selectedFile!.bytes!,
@@ -113,7 +175,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
 
       FormData formData = FormData.fromMap({
         'file': multipartFile,
-        'commission_period': _commissionPeriodController.text.trim(),
+        'commission_period': commissionPeriod,
+        'mode': action,
       });
 
       setState(() {
@@ -121,6 +184,7 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
         _uploadProgress = 0.0;
       });
 
+      // Upload
       Response response = await dio.post(
         '$baseUrl/upload_commissions',
         data: formData,
@@ -154,9 +218,11 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
         _showMessage("❌ Upload failed.");
       }
     } on DioException catch (e) {
+      Navigator.pop(context); // Ensure spinner closes on API failure
       _showMessage(
           "❌ Upload failed: ${e.response?.data?['error'] ?? 'Unknown error'}");
     } catch (e) {
+      Navigator.pop(context); // Ensure spinner closes on any error
       _showMessage("❌ Something went wrong. Please try again.");
     } finally {
       setState(() {
@@ -165,6 +231,10 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       });
     }
   }
+
+// =====================
+// ⬆️ REPLACE THIS BLOCK ⬆️
+// =====================
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
@@ -223,14 +293,37 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
                               fontSize: 22, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 10),
-                        TextField(
-                          controller: _commissionPeriodController,
-                          decoration: InputDecoration(
-                            labelText: "Enter Commission Period",
-                            hintText: "e.g., January Week 3",
-                            border: OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.calendar_today),
-                          ),
+                        Autocomplete<String>(
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) {
+                              return const Iterable<String>.empty();
+                            }
+                            return commissionPeriods.where((String option) {
+                              return option.toLowerCase().contains(
+                                  textEditingValue.text.toLowerCase());
+                            });
+                          },
+                          onSelected: (String selection) {
+                            _commissionPeriodController.text = selection;
+                          },
+                          fieldViewBuilder: (context, controller, focusNode,
+                              onEditingComplete) {
+                            _commissionPeriodController.text = controller.text;
+                            controller.addListener(() {
+                              _commissionPeriodController.text =
+                                  controller.text;
+                            });
+                            return TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: const InputDecoration(
+                                labelText: "Enter Commission Period",
+                                hintText: "Start typing e.g. March Week 3",
+                                prefixIcon: Icon(Icons.calendar_today),
+                                border: OutlineInputBorder(),
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton.icon(

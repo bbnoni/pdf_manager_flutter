@@ -44,8 +44,10 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
 
       if (response.statusCode == 200 && response.data is List) {
         setState(() {
-          commissions =
-              response.data.cast<Map<String, dynamic>>().reversed.toList();
+          commissions = response.data.cast<Map<String, dynamic>>();
+          commissions.sort((a, b) =>
+              DateTime.parse(b['date']).compareTo(DateTime.parse(a['date'])));
+
           filteredCommissions = commissions;
           _isLoading = false;
         });
@@ -175,7 +177,8 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                                                     fontSize: 18),
                                               ),
                                               subtitle: Text(
-                                                "Date: ${commission['date']}  •  Period: ${commission['commission_period']}",
+                                                //"Date: ${commission['date']}  •  Period: ${commission['commission_period']}",
+                                                "Period: ${commission['commission_period']}",
                                                 style: const TextStyle(
                                                     color: Colors.grey),
                                               ),
