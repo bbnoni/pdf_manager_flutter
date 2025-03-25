@@ -21,11 +21,20 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
   List<Map<String, dynamic>> filteredCommissions = [];
   bool _isLoading = true;
   String searchQuery = "";
+  String? firstName; // 🟢 Add this
 
   @override
   void initState() {
     super.initState();
+    loadUserInfo();
     fetchCommissions();
+  }
+
+  Future<void> loadUserInfo() async {
+    final name = await storage.read(key: "first_name");
+    setState(() {
+      firstName = name;
+    });
   }
 
   Future<void> fetchCommissions() async {
@@ -229,6 +238,15 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      "👋 Welcome, ${firstName ?? "Agent"}!",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     const Text(
                       "MM Agent Portal",
                       style: TextStyle(

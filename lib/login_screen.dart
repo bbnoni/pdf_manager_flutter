@@ -85,6 +85,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         await storage.write(key: 'token', value: response.data['token'] ?? '');
         await storage.write(key: 'role', value: response.data['role'] ?? '');
+        await storage.write(
+            key: 'first_name', value: response.data['first_name'] ?? '');
 
         setState(() {
           isLoading = false;
