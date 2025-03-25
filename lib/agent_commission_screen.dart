@@ -310,14 +310,30 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
         color: Colors.blueAccent,
         child: Column(
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blueAccent),
-              child: Text(
-                "MM Agent Portal",
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
+            DrawerHeader(
+              decoration: const BoxDecoration(color: Colors.blueAccent),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "👋 Welcome, ${firstName ?? "Agent"}!",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "MM Agent Portal",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -325,8 +341,26 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                 child: Column(
                   children: [
                     _buildSidebarItem(Icons.dashboard, "Dashboard"),
-                    _buildSidebarItem(Icons.money, "My Commissions",
-                        isActive: true),
+                    _buildSidebarItem(
+                      Icons.money,
+                      "My Commissions",
+                      isActive: true,
+                      onTap: () async {
+                        Navigator.pop(context); // close drawer
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) =>
+                              const Center(child: CircularProgressIndicator()),
+                        );
+
+                        setState(() => searchQuery = "");
+                        await fetchCommissions();
+
+                        if (mounted) Navigator.pop(context);
+                        _showMessage("✅ Refreshed commissions!");
+                      },
+                    ),
                     const SizedBox(height: 20),
                     _buildAccountSection(),
                   ],
