@@ -238,8 +238,36 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                     ),
                     const SizedBox(height: 30),
                     _buildSidebarItem(Icons.dashboard, "Dashboard"),
-                    _buildSidebarItem(Icons.money, "My Commissions",
-                        isActive: true),
+                    _buildSidebarItem(
+                      Icons.money,
+                      "My Commissions",
+                      isActive: true,
+                      onTap: () async {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context); // close Drawer on mobile
+                        }
+
+                        // Show loading indicator
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) =>
+                              const Center(child: CircularProgressIndicator()),
+                        );
+
+                        // Reset and fetch commissions
+                        setState(() {
+                          searchQuery = "";
+                        });
+
+                        await fetchCommissions(); // refresh commissions
+
+                        // Close loading indicator after fetch
+                        if (mounted) Navigator.pop(context);
+
+                        _showMessage("✅ Refreshed commissions!");
+                      },
+                    ),
                     const SizedBox(height: 20),
                     _buildAccountSection(),
                   ],
