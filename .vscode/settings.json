@@ -1,0 +1,7 @@
+{
+    "python.analysis.extraPaths": [
+        "",
+        "\"python.analysis.extraPaths\": [   \"./venv/lib/python3.9/site-packages\" ]",
+        "./flask_backend/test_"
+    ]
+}

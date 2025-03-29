@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
+import 'package:pdf_manager/audit_log_screen.dart';
 import 'package:pdf_manager/delete_commission_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'create_manager_screen.dart'; // Import the CreateManagerScreen class
@@ -168,7 +170,48 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
         action = decision;
       }
 
-      // Prepare file
+      // Prepare file for Supabase
+      final supabase = supa.Supabase.instance.client;
+      final bucket = supabase.storage.from('commissions');
+      final String uniqueFileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${_selectedFile!.name}';
+
+      try {
+        if (kIsWeb) {
+          await bucket.uploadBinary(
+            'original/$uniqueFileName',
+            _selectedFile!.bytes!,
+          );
+        } else {
+          final file = File(_selectedFile!.path!);
+          final bytes = await file.readAsBytes();
+          await bucket.uploadBinary('original/$uniqueFileName', bytes);
+        }
+
+        final publicUrl = bucket.getPublicUrl('original/$uniqueFileName');
+        debugPrint("✅ Supabase upload successful: $publicUrl");
+      } catch (e) {
+        debugPrint("❌ Supabase upload failed: $e");
+      }
+
+// Upload original file to Supabase
+      try {
+        if (kIsWeb) {
+          await bucket.uploadBinary(
+              'original/$uniqueFileName', _selectedFile!.bytes!);
+        } else {
+          final file = File(_selectedFile!.path!);
+          final bytes = await file.readAsBytes();
+
+          await bucket.uploadBinary('original/$uniqueFileName', bytes);
+        }
+        final publicUrl = bucket.getPublicUrl('original/$uniqueFileName');
+        debugPrint("✅ Supabase upload successful: $publicUrl");
+      } catch (e) {
+        debugPrint("❌ Supabase upload failed: $e");
+      }
+
+// Prepare file for API
       MultipartFile multipartFile;
       if (kIsWeb) {
         multipartFile = MultipartFile.fromBytes(_selectedFile!.bytes!,
@@ -189,7 +232,7 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
         _uploadProgress = 0.0;
       });
 
-      // Upload
+// Upload to Render backend
       Response response = await dio.post(
         '$baseUrl/upload_commissions',
         data: formData,
@@ -209,6 +252,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
         int recordsUploaded = responseData['records_uploaded'] ?? 0;
         int totalRecords = responseData['total_records'] ?? 0;
         String? failedUrl = responseData['failed_download_url'];
+
+        debugPrint("⚠️ failedUrl: $failedUrl"); // 👈 ADD THIS
 
         _showMessage(
             "✅ Upload successful! $recordsUploaded/$totalRecords records uploaded.");
@@ -233,12 +278,23 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
                       Navigator.of(context).pop();
 
                       if (kIsWeb) {
-                        // Web: Open URL directly
-                        await launchUrl(Uri.parse(baseUrl + failedUrl),
+                        // Web: Open full URL (Supabase)
+                        await launchUrl(
+                            Uri.parse(failedUrl.startsWith("http")
+                                ? failedUrl
+                                : baseUrl + failedUrl),
                             mode: LaunchMode.externalApplication);
                         return;
                       }
 
+                      if (failedUrl.startsWith("http")) {
+                        // ✅ Fully qualified Supabase URL
+                        await launchUrl(Uri.parse(failedUrl),
+                            mode: LaunchMode.externalApplication);
+                        return;
+                      }
+
+                      // ✅ Local backend download (e.g. /download_failed_commissions)
                       String? token = await storage.read(key: "token");
                       if (token == null) {
                         _showMessage("❌ No token found.");
@@ -256,14 +312,14 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
 
                         final bytes = response.data;
                         final directory = await getTemporaryDirectory();
-                        final filePath =
-                            "${directory.path}/failed_commissions_${DateTime.now().millisecondsSinceEpoch}.xlsx";
+                        final timestamp = DateTime.now().millisecondsSinceEpoch;
+                        final failedFileName =
+                            "failed_commissions_$timestamp.xlsx";
+                        final filePath = "${directory.path}/$failedFileName";
                         final file = File(filePath);
                         await file.writeAsBytes(bytes);
 
-                        await OpenFile.open(
-                            filePath); // Automatically open Excel file
-
+                        await OpenFile.open(filePath);
                         _showMessage("✅ File saved and opened.");
                       } catch (e) {
                         _showMessage("❌ Failed to download file.");
@@ -493,6 +549,14 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => const DeleteCommissionScreen(),
+            ),
+          );
+        }),
+        _buildSidebarItem(Icons.history, "Audit Logs", onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AuditLogScreen(), // ✅ Here!
             ),
           );
         }),
