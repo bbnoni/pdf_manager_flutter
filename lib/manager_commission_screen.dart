@@ -175,6 +175,7 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       final bucket = supabase.storage.from('commissions');
       final String uniqueFileName =
           '${DateTime.now().millisecondsSinceEpoch}_${_selectedFile!.name}';
+      String publicUrl = "";
 
       try {
         if (kIsWeb) {
@@ -225,6 +226,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
         'file': multipartFile,
         'commission_period': commissionPeriod,
         'mode': action,
+        'original_file_url':
+            publicUrl, // ✅ Fix: Pass original file URL to backend
       });
 
       setState(() {
