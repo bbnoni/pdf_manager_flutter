@@ -9,6 +9,7 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import 'package:pdf_manager/audit_log_screen.dart';
 import 'package:pdf_manager/delete_commission_screen.dart';
+import 'package:pdf_manager/dio_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -27,10 +28,18 @@ class ManagerCommissionScreen extends StatefulWidget {
 }
 
 class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
-  final Dio dio = Dio();
+  final Dio dio = DioClient.dio;
+  //final Dio dio = Dio();
   final storage = FlutterSecureStorage();
 
   bool _isUploading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    DioClient.init(context); // ✅ Set up global interceptor
+  }
+
   double _uploadProgress = 0.0;
   String? _uploadedFileName;
   int? _recordsUploaded;

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pdf_manager/dio_client.dart';
 
 import 'commission_details_screen.dart';
 import 'login_screen.dart';
@@ -15,7 +16,8 @@ class AgentCommissionScreen extends StatefulWidget {
 }
 
 class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
-  final Dio dio = Dio();
+  //final Dio dio = Dio();
+  final Dio dio = DioClient.dio;
   final storage = FlutterSecureStorage();
   List<Map<String, dynamic>> commissions = [];
   List<Map<String, dynamic>> filteredCommissions = [];
@@ -26,6 +28,7 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
   @override
   void initState() {
     super.initState();
+    DioClient.init(context); // Initialize Dio client with interceptors
     loadUserInfo();
     fetchCommissions();
   }
