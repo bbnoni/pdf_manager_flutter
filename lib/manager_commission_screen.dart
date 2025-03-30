@@ -149,6 +149,9 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
 
       String action = "append"; // default action
       if (periodExists) {
+        _showMessage("✅ No existing commission period found. Continuing...");
+        await Future.delayed(const Duration(seconds: 3));
+      } else {
         final decision = await showDialog<String>(
           context: context,
           builder: (_) => AlertDialog(
