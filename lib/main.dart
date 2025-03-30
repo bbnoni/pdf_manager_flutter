@@ -1,4 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:pdf_manager/firebase_options.dart';
 import 'package:pdf_manager/widgets/inactivity_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,6 +14,11 @@ import 'manager_commission_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   await Supabase.initialize(
     url: 'https://gottknpkjqqlmghyilcf.supabase.co',

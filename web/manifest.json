@@ -1,6 +1,6 @@
 {
-    "name": "pdf_manager",
-    "short_name": "pdf_manager",
+    "name": "Agent Portal",
+    "short_name": "Agent",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

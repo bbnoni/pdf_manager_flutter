@@ -21,25 +21,13 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -53,12 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCOxNIsg1zL_Vf1lieYyK3kYy3irwkbFpY',
-    appId: '1:231500757923:web:ced6433f6a1b855fabf816',
-    messagingSenderId: '231500757923',
-    projectId: 'pdfmanager-90eba',
-    authDomain: 'pdfmanager-90eba.firebaseapp.com',
-    storageBucket: 'pdfmanager-90eba.firebasestorage.app',
-    measurementId: 'G-JLWBYMS8YN',
+    apiKey: 'AIzaSyD8LpowdU0sgBAL9KhmuTM1jwUd8qh8YJ0',
+    appId: '1:806095337181:web:c52b7d92e37996e80ecd34',
+    messagingSenderId: '806095337181',
+    projectId: 'agentportalcommisions',
+    authDomain: 'agentportalcommisions.firebaseapp.com',
+    storageBucket: 'agentportalcommisions.firebasestorage.app',
+    measurementId: 'G-KQRF1TW5YY',
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyBf-QAwTbfR9dchXZm79XSVhYzzyyLpLDU',
+    appId: '1:806095337181:android:07329bfd51e47e2d0ecd34',
+    messagingSenderId: '806095337181',
+    projectId: 'agentportalcommisions',
+    storageBucket: 'agentportalcommisions.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDEkwEWkpxyR5aXb9s1odi3Mf2mDGmOufA',
+    appId: '1:806095337181:ios:5a11d62ba9c34f230ecd34',
+    messagingSenderId: '806095337181',
+    projectId: 'agentportalcommisions',
+    storageBucket: 'agentportalcommisions.firebasestorage.app',
+    iosBundleId: 'com.example.pdfManager',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyDEkwEWkpxyR5aXb9s1odi3Mf2mDGmOufA',
+    appId: '1:806095337181:ios:5a11d62ba9c34f230ecd34',
+    messagingSenderId: '806095337181',
+    projectId: 'agentportalcommisions',
+    storageBucket: 'agentportalcommisions.firebasestorage.app',
+    iosBundleId: 'com.example.pdfManager',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyD8LpowdU0sgBAL9KhmuTM1jwUd8qh8YJ0',
+    appId: '1:806095337181:web:e2ed06dc28ba583d0ecd34',
+    messagingSenderId: '806095337181',
+    projectId: 'agentportalcommisions',
+    authDomain: 'agentportalcommisions.firebaseapp.com',
+    storageBucket: 'agentportalcommisions.firebasestorage.app',
+    measurementId: 'G-374GFDDRF2',
   );
 }
