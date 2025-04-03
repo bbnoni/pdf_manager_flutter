@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:agentportal/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:pdf_manager/login_screen.dart';
 
 class InactivityHandler extends StatefulWidget {
   final Widget child;

@@ -1,7 +1,7 @@
+import 'package:agentportal/firebase_options.dart';
+import 'package:agentportal/widgets/inactivity_handler.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:pdf_manager/firebase_options.dart';
-import 'package:pdf_manager/widgets/inactivity_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'agent_commission_screen.dart';
