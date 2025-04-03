@@ -147,11 +147,10 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
 
       bool periodExists = checkResponse.data['exists'] == true;
 
+      //bool periodExists = checkResponse.data['exists'] == true;
+
       String action = "append"; // default action
       if (periodExists) {
-        _showMessage("✅ No existing commission period found. Continuing...");
-        await Future.delayed(const Duration(seconds: 3));
-      } else {
         final decision = await showDialog<String>(
           context: context,
           builder: (_) => AlertDialog(
@@ -180,6 +179,9 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
           return;
         }
         action = decision;
+      } else {
+        _showMessage("✅ No existing commission period found. Continuing...");
+        await Future.delayed(const Duration(seconds: 1));
       }
 
       // Prepare file for Supabase
