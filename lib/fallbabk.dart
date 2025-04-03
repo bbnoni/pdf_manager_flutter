@@ -22,7 +22,7 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
   final Dio dio = Dio();
   final storage = FlutterSecureStorage();
 
-  bool _isUploading = false;
+  bool _isUploading = false; //added comments
   double _uploadProgress = 0.0;
   String? _uploadedFileName;
   int? _recordsUploaded;

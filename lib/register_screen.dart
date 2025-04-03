@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 const String baseUrl = "https://pdf-manager-eygj.onrender.com";
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }

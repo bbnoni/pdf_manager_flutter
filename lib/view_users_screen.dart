@@ -20,7 +20,7 @@ class _ViewUsersScreenState extends State<ViewUsersScreen> {
   List<Map<String, dynamic>> users = [];
 
   bool _deleteMode = false;
-  Set<int> _selectedUserIds = {};
+  final Set<int> _selectedUserIds = {};
 
   @override
   void initState() {
