@@ -3,6 +3,7 @@ import 'dart:io' show File;
 import 'package:agentportal/audit_log_screen.dart';
 import 'package:agentportal/delete_commission_screen.dart';
 import 'package:agentportal/dio_client.dart';
+import 'package:agentportal/sms_blast_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -547,6 +548,12 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
                   color: Colors.white)),
         ),
         _buildSidebarItem(Icons.dashboard, "Dashboard"),
+        _buildSidebarItem(Icons.sms, "Send SMS Blast", onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SmsBlastScreen()),
+          );
+        }),
         _buildSidebarItem(Icons.payment, "View Payments", onTap: () {
           Navigator.push(
             context,
