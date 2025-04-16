@@ -25,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
-      isLoading = true; // ✅ Show loading indicator
+      isLoading = true;
     });
 
     String firstName = firstNameController.text.trim();
@@ -41,7 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           "last_name": lastName,
           "phone_number": phoneNumber,
           "password": password,
-          "role": "agent", // ✅ Added role (important for backend)
+          "role": "agent",
         },
       );
 
@@ -50,25 +50,128 @@ class _RegisterScreenState extends State<RegisterScreen> {
           content: Text("✅ Registration successful! Please log in."),
           backgroundColor: Colors.green,
         ));
-        Navigator.pop(context); // Go back to login
+        Navigator.pop(context);
+      }
+    } on DioException catch (e) {
+      final res = e.response;
+
+      if (res?.statusCode == 403 &&
+          res?.data != null &&
+          res?.data!['reset_required'] == true) {
+        final phone = res?.data['phone_number'];
+        final inputFirstName = firstNameController.text.trim();
+        final inputLastName = lastNameController.text.trim();
+        final inputPassword = passwordController.text.trim();
+
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Complete Registration"),
+            content: Text(
+              "This number is already registered but not completed.\n\n"
+              "Use the following to complete registration?\n\n"
+              "First Name: $inputFirstName\n"
+              "Last Name: $inputLastName\n"
+              "Password: $inputPassword",
+            ),
+            actions: [
+              TextButton(
+                child: const Text("Cancel"),
+                onPressed: () => Navigator.pop(context, false),
+              ),
+              ElevatedButton(
+                child: const Text("Yes, Complete"),
+                onPressed: () async {
+                  Navigator.pop(context, true); // close dialog immediately
+                },
+              )
+            ],
+          ),
+        );
+
+        if (confirmed == true) {
+          final token = await showDialog<String>(
+            context: context,
+            builder: (context) {
+              final tokenController = TextEditingController();
+              return AlertDialog(
+                title: const Text("Verify Registration"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("Enter the 6-digit code sent to your phone"),
+                    TextField(
+                      controller: tokenController,
+                      decoration: const InputDecoration(labelText: "Token"),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Cancel"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () =>
+                        Navigator.pop(context, tokenController.text.trim()),
+                    child: const Text("Submit"),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (token == null || token.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("❌ Token required to complete registration."),
+              backgroundColor: Colors.red,
+            ));
+            return;
+          }
+
+          try {
+            final completeResponse = await dio.post(
+              '$baseUrl/complete_registration',
+              data: {
+                "phone_number": phone,
+                "first_name": inputFirstName,
+                "last_name": inputLastName,
+                "password": inputPassword,
+                "token": token, // ✅ Add the reset token to payload
+              },
+            );
+
+            if (completeResponse.statusCode == 200) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text("✅ Registration completed! Please log in."),
+                backgroundColor: Colors.green,
+              ));
+              Navigator.pop(context); // Go back to login
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(
+                    "❌ ${completeResponse.data['error'] ?? 'Failed to complete registration.'}"),
+                backgroundColor: Colors.red,
+              ));
+            }
+          } on DioException catch (err) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  "❌ ${err.response?.data['error'] ?? 'Completion failed.'}"),
+              backgroundColor: Colors.red,
+            ));
+          }
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:
-              Text("❌ ${response.data['error'] ?? 'Registration failed.'}"),
+          content: Text("❌ ${res?.data['error'] ?? 'Registration failed.'}"),
           backgroundColor: Colors.red,
         ));
       }
-    } on DioException catch (e) {
-      print("❌ Registration Error: ${e.response?.data}");
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content:
-            Text("❌ ${e.response?.data?['error'] ?? 'Registration failed.'}"),
-        backgroundColor: Colors.red,
-      ));
     } finally {
       setState(() {
-        isLoading = false; // ✅ Hide loading indicator after request
+        isLoading = false;
       });
     }
   }
@@ -130,9 +233,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
               isLoading
-                  ? const CircularProgressIndicator() // ✅ Show loader while registering
+                  ? const CircularProgressIndicator()
                   : ElevatedButton(
-                      onPressed: registerAgent,
+                      onPressed: isLoading ? null : registerAgent,
                       child: const Text("Register"),
                     ),
             ],
