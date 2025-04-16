@@ -24,6 +24,7 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
   bool _isLoading = true;
   String searchQuery = "";
   String? firstName; // 🟢 Add this
+  String? Name;
 
   @override
   void initState() {
@@ -55,12 +56,13 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
       );
 
       if (response.statusCode == 200 && response.data is List) {
-        setState(() {
-          commissions = response.data.cast<Map<String, dynamic>>();
-          commissions.sort((a, b) =>
-              DateTime.parse(b['date']).compareTo(DateTime.parse(a['date'])));
+        final List<Map<String, dynamic>> fetched =
+            response.data.cast<Map<String, dynamic>>();
+        fetched.sort((a, b) => b['id'].compareTo(a['id']));
 
-          filteredCommissions = commissions;
+        setState(() {
+          commissions = fetched;
+          filteredCommissions = fetched;
           _isLoading = false;
         });
 
@@ -183,7 +185,7 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                                               contentPadding:
                                                   const EdgeInsets.all(10),
                                               title: Text(
-                                                "GH₵${commission['amount']}",
+                                                "GH₵${commission['total_commissions_due'].toStringAsFixed(2)}",
                                                 style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 18),
@@ -242,7 +244,7 @@ class _AgentCommissionScreenState extends State<AgentCommissionScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "👋 Welcome, ${firstName ?? "Agent"}!",
+                      "👋 Welcome, ${Name ?? "Agent"}!",
                       style: const TextStyle(
                         fontSize: 18,
                         color: Colors.white,

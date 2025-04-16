@@ -67,7 +67,7 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       'November',
       'December'
     ])
-      for (var week = 1; week <= 5; week++) "$month Week $week"
+      for (var week = 1; week <= 5; week++) "$month: Week $week Payment"
   ];
 
   Future<void> _logout() async {
@@ -148,7 +148,7 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       bool periodExists = checkResponse.data['exists'] == true;
 
       String action = "append"; // default action
-      if (periodExists) {
+      if (!periodExists) {
         _showMessage("✅ No existing commission period found. Continuing...");
         await Future.delayed(const Duration(seconds: 3));
       } else {
@@ -458,7 +458,8 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
                               focusNode: focusNode,
                               decoration: const InputDecoration(
                                 labelText: "Enter Commission Period",
-                                hintText: "Start typing e.g. March Week 3",
+                                hintText:
+                                    "Start typing e.g. March: Week 3 Payment",
                                 prefixIcon: Icon(Icons.calendar_today),
                                 border: OutlineInputBorder(),
                               ),
