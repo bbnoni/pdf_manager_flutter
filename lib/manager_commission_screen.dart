@@ -3,6 +3,7 @@ import 'dart:io' show File;
 import 'package:agentportal/audit_log_screen.dart';
 import 'package:agentportal/delete_commission_screen.dart';
 import 'package:agentportal/dio_client.dart';
+import 'package:agentportal/send_notification_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -576,6 +577,14 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => const AuditLogScreen(), // ✅ Here!
+            ),
+          );
+        }),
+        _buildSidebarItem(Icons.message, "Send Notification", onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SendNotificationScreen(),
             ),
           );
         }),
