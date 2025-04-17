@@ -147,7 +147,11 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                   labelText: "Message",
                   border: OutlineInputBorder(),
                 ),
-                onChanged: (val) => message = val,
+                onChanged: (val) {
+                  setState(() {
+                    message = val;
+                  });
+                },
               ),
               const SizedBox(height: 20),
               SwitchListTile(
