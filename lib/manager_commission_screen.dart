@@ -137,13 +137,16 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
       );
 
       // Check if commission period exists
-      final checkResponse = await dio.get(
-        '$baseUrl/check_commission_period',
-        queryParameters: {'commission_period': commissionPeriod},
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-
-      Navigator.pop(context); // Always close spinner after request finishes
+      Response checkResponse;
+      try {
+        checkResponse = await dio.get(
+          '$baseUrl/check_commission_period',
+          queryParameters: {'commission_period': commissionPeriod},
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
+      } finally {
+        Navigator.pop(context); // Always close spinner
+      }
 
       bool periodExists = checkResponse.data['exists'] == true;
 
