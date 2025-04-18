@@ -68,12 +68,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           builder: (context) => AlertDialog(
             title: const Text("Complete Registration"),
             content: Text(
-              "This number is already registered but not completed.\n\n"
-              "Use the following to complete registration?\n\n"
-              "First Name: $inputFirstName\n"
-              "Last Name: $inputLastName\n"
-              "Password: $inputPassword",
-            ),
+                // "This number is already registered but not completed.\n\n"
+                "Use the following to complete registration?\n\n"
+                "First Name: $inputFirstName\n"
+                "Last Name: $inputLastName\n"
+                // "Password: $inputPassword",
+                ),
             actions: [
               TextButton(
                 child: const Text("Cancel"),
