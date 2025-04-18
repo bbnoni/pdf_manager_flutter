@@ -244,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
                     decoration:
-                        const InputDecoration(labelText: 'Phone Number'),
+                        const InputDecoration(labelText: 'Agent Number'),
                   ),
                   TextField(
                     controller: passwordController,
