@@ -48,6 +48,13 @@
   </script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+ <!--- <script src="flutter_bootstrap.js" async></script> -->
+ <script>
+  const script = document.createElement('script');
+  script.src = `flutter_bootstrap.js?v=1.0.5`;  // 🔄 bump this on every deploy
+  script.async = true;
+  document.body.appendChild(script);
+ </script>
+
 </body>
 </html>
