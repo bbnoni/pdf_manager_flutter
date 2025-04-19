@@ -200,10 +200,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               TextFormField(
                 controller: phoneController,
-                decoration: const InputDecoration(labelText: "Phone Number"),
+                decoration: const InputDecoration(labelText: "Agent Number"),
                 keyboardType: TextInputType.phone,
                 validator: (value) =>
-                    value!.trim().isEmpty ? "Enter phone number" : null,
+                    value!.trim().isEmpty ? "Enter agent number" : null,
               ),
               TextFormField(
                 controller: passwordController,
