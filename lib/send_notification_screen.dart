@@ -25,10 +25,14 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
   List<String> selectedAgents = [];
   List<String> failed = [];
 
+  List<String> weeks = [];
+  String selectedWeek = "";
+
   @override
   void initState() {
     super.initState();
     fetchAgentContacts();
+    fetchWeeks(); // 👈 ADD THIS
   }
 
   Future<void> fetchAgentContacts() async {
@@ -51,20 +55,69 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
     }
   }
 
+  Future<void> fetchWeeks() async {
+    String? token = await storage.read(key: "token");
+    if (token == null || token.isEmpty) return;
+
+    try {
+      Response response = await dio.get(
+        '$baseUrl/get_commission_periods',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          weeks = List<String>.from(response.data);
+        });
+      }
+    } catch (e) {
+      _showMessage("❌ Failed to fetch weeks.");
+    }
+  }
+
   Future<void> sendNotification() async {
     String? token = await storage.read(key: "token");
     if (token == null) return;
 
-    if (message.isEmpty) {
-      _showMessage("Please enter a message.");
+    if (message.trim().isEmpty) {
+      _showMessage("✏️ Please enter a message to send.");
       return;
+    }
+
+    List<String> finalRecipients = [];
+
+    if (sendToAll) {
+      finalRecipients =
+          []; // Send to all, backend interprets empty as "broadcast"
+    } else {
+      if (selectedWeek.isEmpty) {
+        _showMessage("📆 Please select a commission week.");
+        return;
+      }
+
+      if (selectedAgents.isNotEmpty) {
+        finalRecipients = selectedAgents;
+      } else {
+        // Filter contacts internally, don't show in UI
+        finalRecipients = contacts
+            .map((c) => c['agent_wallet_number']?.toString())
+            .whereType<String>()
+            .where((wallet) => wallet.trim().isNotEmpty)
+            .toList();
+
+        if (finalRecipients.isEmpty) {
+          _showMessage("👤 No matching agents found for the selected week.");
+          return;
+        }
+      }
     }
 
     setState(() => isLoading = true);
 
     Map<String, dynamic> payload = {
       "message": message,
-      "agent_wallets": sendToAll ? [] : selectedAgents
+      "agent_wallets": finalRecipients,
+      "commission_week": selectedWeek.isEmpty ? null : selectedWeek
     };
 
     try {
@@ -154,11 +207,40 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                 },
               ),
               const SizedBox(height: 20),
+
+              // ✅ INSERT WEEK DROPDOWN HERE
+              // Only show week picker if sendToAll is off
+              if (weeks.isNotEmpty && !sendToAll)
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: "Select Commission Week",
+                    border: OutlineInputBorder(),
+                  ),
+                  value: selectedWeek.isEmpty ? null : selectedWeek,
+                  items: weeks.map((week) {
+                    return DropdownMenuItem<String>(
+                      value: week,
+                      child: Text(week),
+                    );
+                  }).toList(),
+                  onChanged: (val) => setState(() => selectedWeek = val ?? ""),
+                ),
+
+              if (!sendToAll && selectedWeek.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                  child: Text(
+                    "⚠️ Please select a commission week to enable messaging.",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+
               SwitchListTile(
                 value: sendToAll,
                 title: const Text("Send to All Agents"),
                 onChanged: (val) => setState(() => sendToAll = val),
               ),
+
               const SizedBox(height: 12),
               if (!sendToAll)
                 MultiSelectDialogField<String>(

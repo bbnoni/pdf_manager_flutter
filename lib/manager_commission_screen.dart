@@ -49,9 +49,9 @@ class _ManagerCommissionScreenState extends State<ManagerCommissionScreen> {
   final TextEditingController _commissionPeriodController =
       TextEditingController();
 
-  bool _isSidebarOpen = false;
+  final bool _isSidebarOpen = false;
 
-  String _uploadMode = 'append'; // default
+  final String _uploadMode = 'append'; // default
 
   final List<String> commissionPeriods = [
     for (var month in [
