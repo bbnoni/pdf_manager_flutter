@@ -27,8 +27,8 @@ class CommissionDetailsScreen extends StatelessWidget {
             _buildTransactionSection("Cash-In Transactions", [
               _buildRow(
                   "Transactions", commission['cashin_total_transactions']),
-              _buildRow("Valid Transactions",
-                  commission['cashin_total_number_valid']),
+              // _buildRow("Valid Transactions",
+              //     commission['cashin_total_number_valid']),
               _buildRow("Value",
                   "GH₵${_formatCurrency(commission['cashin_total_value'])}"),
               _buildRow("Valid Value",
