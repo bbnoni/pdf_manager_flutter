@@ -20,10 +20,12 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
   bool sendToAll = false;
   bool showPreview = true;
   bool isLoading = false;
+  bool whatsappOnly = false; // New flag for WhatsApp-only mode
 
   List<Map<String, dynamic>> contacts = [];
   List<String> selectedAgents = [];
-  List<String> failed = [];
+  List<dynamic> failed =
+      []; // Changed to dynamic to handle different failure formats
 
   List<String> weeks = [];
   String selectedWeek = "";
@@ -32,7 +34,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
   void initState() {
     super.initState();
     fetchAgentContacts();
-    fetchWeeks(); // 👈 ADD THIS
+    fetchWeeks();
   }
 
   Future<void> fetchAgentContacts() async {
@@ -120,25 +122,37 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
       "commission_week": selectedWeek.isEmpty ? null : selectedWeek
     };
 
+    // Choose endpoint based on whatsappOnly flag
+    final endpoint = whatsappOnly
+        ? '$baseUrl/notifications/send_whatsapp_notifications'
+        : '$baseUrl/notifications/send_notifications';
+
     try {
       Response response = await dio.post(
-        '$baseUrl/notifications/send_notifications',
+        endpoint,
         data: payload,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
       if (response.statusCode == 200) {
         setState(() {
-          failed = List<String>.from(response.data['failed'] ?? []);
+          // Handle different failure formats from different endpoints
+          if (response.data['failed'] is List) {
+            failed = response.data['failed'];
+          } else {
+            failed = [];
+          }
           isLoading = false;
         });
-        _showMessage("✅ Notifications sent.");
+        _showMessage(whatsappOnly
+            ? "✅ WhatsApp notifications sent."
+            : "✅ Notifications sent to all channels.");
       } else {
         _showMessage("⚠️ Failed to send notifications.");
         setState(() => isLoading = false);
       }
     } catch (e) {
-      _showMessage("🚨 Error sending notifications.");
+      _showMessage("🚨 Error sending notifications: ${e.toString()}");
       setState(() => isLoading = false);
     }
   }
@@ -159,7 +173,6 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
     }
   }
 
-  // ✅ Updated to reflect all available channels
   String getChannelSymbol(Map<String, dynamic> contact) {
     final email = contact['email']?.toString().trim();
     final phone = contact['phone_number']?.toString().trim();
@@ -186,6 +199,15 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter contacts based on whatsappOnly mode
+    final displayContacts = whatsappOnly
+        ? contacts
+            .where((c) =>
+                c['whatsapp_number'] != null &&
+                c['whatsapp_number'].toString().trim().isNotEmpty)
+            .toList()
+        : contacts;
+
     return Stack(
       children: [
         Scaffold(
@@ -208,8 +230,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ✅ INSERT WEEK DROPDOWN HERE
-              // Only show week picker if sendToAll is off
+              // Commission week dropdown
               if (weeks.isNotEmpty && !sendToAll)
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
@@ -235,16 +256,28 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                   ),
                 ),
 
+              // Send to all switch
               SwitchListTile(
                 value: sendToAll,
                 title: const Text("Send to All Agents"),
                 onChanged: (val) => setState(() => sendToAll = val),
               ),
 
+              // WhatsApp only switch - NEW
+              SwitchListTile(
+                value: whatsappOnly,
+                title: const Text("WhatsApp Only"),
+                subtitle: const Text("Send messages only via WhatsApp"),
+                secondary: Icon(Icons.message, color: Colors.green),
+                onChanged: (val) => setState(() => whatsappOnly = val),
+              ),
+
               const SizedBox(height: 12),
+
+              // Agent selection
               if (!sendToAll)
                 MultiSelectDialogField<String>(
-                  items: contacts.map((c) {
+                  items: displayContacts.map((c) {
                     String wallet = c['agent_wallet_number'] ?? 'unknown';
                     return MultiSelectItem<String>(
                       wallet,
@@ -254,8 +287,12 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                   initialValue: selectedAgents,
                   listType: MultiSelectListType.CHIP,
                   searchable: true,
-                  title: const Text("Select Specific Agents"),
-                  buttonText: const Text("Select Specific Agents"),
+                  title: Text(whatsappOnly
+                      ? "Select WhatsApp Agents"
+                      : "Select Specific Agents"),
+                  buttonText: Text(whatsappOnly
+                      ? "Select WhatsApp Agents"
+                      : "Select Specific Agents"),
                   chipDisplay: MultiSelectChipDisplay(
                     chipColor: Colors.grey[200],
                     textStyle: const TextStyle(color: Colors.black),
@@ -274,25 +311,45 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                       setState(() => selectedAgents = values),
                 ),
               const SizedBox(height: 20),
+
+              // Show channel preview switch
               SwitchListTile(
                 value: showPreview,
                 title: const Text("Show Channel Preview"),
                 onChanged: (val) => setState(() => showPreview = val),
               ),
               const SizedBox(height: 20),
+
+              // Send button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.send),
-                  label: const Text("Send Notification"),
+                  label: Text(whatsappOnly
+                      ? "Send WhatsApp Notification"
+                      : "Send Notification"),
                   onPressed: sendNotification,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: whatsappOnly ? Colors.green : null,
+                    foregroundColor: whatsappOnly ? Colors.white : null,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
+
+              // Failed deliveries
               if (failed.isNotEmpty) ...[
                 const Text("Failed to Deliver to:",
                     style: TextStyle(fontWeight: FontWeight.bold)),
-                ...failed.map((id) => Text("• $id")),
+                ...failed.map((failure) {
+                  if (failure is Map) {
+                    return Text(
+                        "• ${failure['name'] ?? 'Unknown'}: ${failure['reason'] ?? 'Unknown error'}");
+                  } else {
+                    return Text("• $failure");
+                  }
+                }),
               ]
             ]),
           ),
